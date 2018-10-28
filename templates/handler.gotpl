@@ -1,0 +1,151 @@
+package {{.Name}}
+
+import (
+	"database/sql"
+	"net/http"
+	"strconv"
+
+	"github.com/labstack/echo"
+
+    "{{index .PackageRoutes "configuration"}}/configuration"
+	"{{index .PackageRoutes "logger"}}/logger"
+    "{{index .PackageRoutes "message"}}/message"
+)
+
+// Handler estructura que tiene los handler de {{.Name}}
+type Handler struct {
+    Configuration *configuration.Configuration
+    DB            *sql.DB
+}
+
+// NewHandler devuelve un puntero a Handler.
+func NewHandler(c *configuration.Configuration, db *sql.DB) *Handler {
+    return &Handler{c, db}
+}
+
+// Create handler para crear un registro de {{.Name}}
+func (h *Handler) Create(c echo.Context) error {
+	mr := message.ResponseMessage{}
+	m := {{.Name}}.Model{}
+
+	err := c.Bind(&m)
+	if err != nil {
+                logger.Warning.Printf("la estructura {{.Name}} no es correcta. Handler Create: %v", err)
+		mr.AddError(message.BadStructureType, message.BadStructureCode, "la estructura del objeto no es correcta", "revise la documentación del paquete")
+                return c.JSON(http.StatusBadRequest, mr)
+	}
+
+	ms := NewStore(h.Configuration, h.DB)
+	err = ms.Create(m)
+	if err != nil {
+		logger.Error.Printf("no se pudo registrar el modelo {{.Name}}. Handler Create: %v", err)
+                mr.AddError(message.InternalServerErrorType, message.InternalServerErrorCode, "no fue posible crear el registro", "revise los log del servidor para más información")
+		return c.JSON(http.StatusBadRequest, mr)
+	}
+
+	mr.AddMessage(message.OKType, message.OKCode, "registro creado", "")
+        mr.Data = m
+        return c.JSON(http.StatusCreated, mr)
+}
+
+// Update handler para actualizar un registro de {{.Name}}
+func (h *Handler) Update(c echo.Context) error {
+	mr := message.ResponseMessage{}
+	m := {{.Name}}.Model{}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		logger.Warning.Printf("el id debe ser numérico. Handler {{.Name}} Update: %v", err)
+		mr.AddError(message.BadDataType, message.BadDataCode, "el id debe ser un número entero", "envíe un número entero")
+		return c.JSON(http.StatusBadRequest, mr)
+	}
+
+	err = c.Bind(&m)
+	if err != nil {
+		logger.Warning.Printf("la estructura {{.Name}} no es correcta. Handler Update: %v", err)
+		mr.AddError(message.BadDataType, message.BadDataCode, "la estructura enviada no es correcta", "revise la documentación")
+		return c.JSON(http.StatusBadRequest, mr)
+	}
+
+    ms := NewStore(h.Configuration, h.DB)
+	m.ID = uint(id)
+	err = ms.Update(m.ID, m)
+	if err != nil {
+		logger.Error.Printf("error al actualizar {{.Name}}. Handler Update: %v", err)
+		mr.AddError(message.InternalServerErrorType, message.InternalServerErrorCode, "no se pudo actualizar el registro", "revise los logs del servidor")
+		return c.JSON(http.StatusInternalServerError, mr)
+	}
+
+	mr.AddMessage(message.OKType, message.OKCode, "registro actualizado", "")
+	mr.Data = m
+	return c.JSON(http.StatusOK, mr)
+}
+
+// Delete handler para eliminar un registro de {{.Name}}
+func (h *Handler) Delete(c echo.Context) error {
+	mr := message.ResponseMessage{}
+	m := {{.Name}}.Model{}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		logger.Warning.Printf("el id debe ser numérico. Handler {{.Name}} Update: %v", err)
+		mr.AddError(message.BadDataType, message.BadDataCode, "el id debe ser un número entero", "envíe un número entero")
+		return c.JSON(http.StatusBadRequest, mr)
+	}
+
+    ms := NewStore(h.Configuration, h.DB)
+	err = ms.Delete(uint(id))
+	if err != nil {
+		logger.Error.Printf("error al borrar {{.Name}}: %d. Handler Delete: %v", id, err)
+		mr.AddError(message.InternalServerErrorType, message.InternalServerErrorCode, "no se pudo eliminar el registro", "revise los log del servidor")
+		return c.JSON(http.StatusInternalServerError, mr)
+	}
+
+	mr.AddMessage(message.OKType, message.OKCode, "registro eliminado", "")
+	return c.JSON(http.StatusOK, mr)
+}
+
+// GetByID handler para obtener un registro de {{.Name}}
+func (h *Handler) GetByID(c echo.Context) error {
+	mr := message.ResponseMessage{}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		logger.Warning.Printf("el id debe ser numérico. Handler {{.Name}} Update: %v", err)
+		mr.AddError(message.BadDataType, message.BadDataCode, "el id debe ser un número entero", "envíe un número entero")
+		return c.JSON(http.StatusBadRequest, mr)
+	}
+
+    ms := NewStorage(h.Configuration, h.DB)
+	res, err := ms.GetByID(uint(id))
+	if err == sql.ErrNoRows {
+		mr.AddMessage(message.NoDataType, message.NoDataCode, "no existen datos", "")
+		return c.JSON(http.StatusOK, mr)
+	}
+	if err != nil {
+		logger.Error.Printf("no se pudo obtener los datos solicitados {{.Name}}: %d. Handler GetByID: %v", id, err)
+		mr.AddError(message.InternalServerErrorType, message.InternalServerErrorCode, "no se pudo consultar la información", "revise los log del servidor")
+		return c.JSON(http.StatusInternalServerError, mr)
+	}
+
+	mr.AddMessage(message.OKType, message.OKCode, "Ok", "")
+	mr.Data = res
+	return c.JSON(http.StatusOK, mr)
+}
+
+// GetAll handler para obtener todos los registro de {{.Name}}
+func (h *Handler) GetAll(c echo.Context) error {
+	mr := message.ResponseMessage{}
+
+    ms := NewStore(h.Configuration, h.DB)
+	res, err := ms.GetAll()
+	if err != nil {
+		logger.Error.Printf("no se pudo obtener la información de {{.Name}}. Handler GetAll: %v", err)
+		mr.AddError(message.InternalServerErrorType, message.InternalServerErrorCode, "no se pudo consultar la información", "revise los log del servidor")
+		return c.JSON(http.StatusInternalServerError, mr)
+	}
+
+	mr.AddMessage(message.OKType, message.OKCode, "Ok", "")
+	mr.Data = res
+	return c.JSON(http.StatusOK, mr)
+}

@@ -1,0 +1,18 @@
+-- CREA LA TABLA {{.Table}}
+CREATE TABLE {{.Table}}(
+    id SERIAL NOT NULL,
+    {{range .Fields -}}
+    {{.Name}} {{sqlType .Type}} {{.NotNull}},
+    {{end -}}
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP,
+    CONSTRAINT {{.Table}}_id_pk PRIMARY KEY (id)
+);
+
+COMMENT ON TABLE {{.Table}} IS 'Aquí el comentario';
+
+-- Registra el módulo {{upp .Name}}
+INSERT INTO modules (name) VALUES ('{{upp .Name}}');
+
+-- Actualiza los permisos para el administrador
+UPDATE module_role SET read = true, post = true, modify = true, erase = true WHERE role_id = 1;

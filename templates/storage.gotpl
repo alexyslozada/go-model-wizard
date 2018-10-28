@@ -1,0 +1,37 @@
+package {{.Name}}
+
+import (
+    "database/sql"
+
+    // Se debe cambiar la ruta de configuration y logger
+	"{{index .PackageRoutes "configuration"}}/configuration"
+	"{{index .PackageRoutes "logger"}}/logger"
+)
+
+const (
+	Postgresql = "postgres"
+	MySql      = "mysql"
+	SqlServer  = "sqlserver"
+	Oracle     = "oracle"
+)
+
+type Storage interface {
+	Create(m *Model) error
+	Update(ID uint, m *Model) error
+	Delete(ID uint) error
+	GetByID(ID uint) (*Model, error)
+	GetAll() (Models, error)
+}
+
+func newStorage(c *configuration.Configuration, db *sql.DB) Storage {
+	var s Storage
+	switch c.DBEngine {
+	case Postgresql:
+		s = &Psql{db}
+	default:
+		logger.Error.Fatalf("el motor de base de datos %s no está implementado.", c.DBEngine)
+	}
+
+	return s
+}
+

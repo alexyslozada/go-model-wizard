@@ -1,0 +1,171 @@
+{{ $length := len .Fields -}}
+package {{.Name}}
+
+import (
+	"database/sql"
+
+    // Se debe cambiar la ruta de configuration y logger
+	"{{index .PackageRoutes "configuration"}}/configuration"
+	"{{index .PackageRoutes "logger"}}/logger"
+
+	"github.com/lib/pq"
+)
+
+// Psql estructura de conexión a la BD de postgres
+type Psql struct{
+    DB *sql.DB
+}
+
+const (
+	psqlInsert  = `INSERT INTO {{.Table}} ({{range $i, $v := .Fields}}{{.Name}}{{if lt $i (dec $length)}}, {{end}}{{end -}}) VALUES ({{range $i, $v := .Fields}}${{inc $i}}{{if lt $i (dec $length)}}, {{end}}{{end -}}) RETURNING id, created_at`
+	psqlUpdate  = "UPDATE {{.Table}} SET {{range $i, $v := .Fields}}{{.Name}} = ${{inc $i}}, {{end -}}updated_at = now() WHERE id = ${{inc $length}}"
+	psqlDelete  = "DELETE FROM {{.Table}} WHERE id = $1"
+	psqlGetAll  = "SELECT id, {{range .Fields}}{{.Name}}, {{end -}}created_at, updated_at FROM {{.Table}}"
+	psqlGetByID = psqlGetAll + " WHERE id = $1"
+)
+
+// Create registra en la BD
+func (p *Psql) Create(m *Model) error {
+	stmt, err := p.DB.Prepare(psqlInsert)
+	if err != nil {
+	    logger.Error.Printf("no se pudo preparar la sentencia Create de {{.Name}}: %v", err)
+		return err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(
+	    {{range .Fields -}}
+	    {{fieldSQL .}},
+	    {{end -}}
+	).Scan(&m.ID, &m.CreatedAt)
+	if err != nil {
+	    logger.Error.Printf("no se pudo ejecutar la sentencia Create de {{.Name}}: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+// Update actualiza un registro en la BD
+func (p *Psql) Update(id uint, m *Model) error {
+	stmt, err := p.DB.Prepare(psqlUpdate)
+	if err != nil {
+	    logger.Error.Printf("no se pudo preparar la sentencia Update de {{.Name}}: %v", err)
+		return err
+	}
+	defer stmt.Close()
+
+	err = psql.ExecAffectingOneRow(
+        stmt,
+	    {{range .Fields -}}
+	    {{fieldSQL .}},
+	    {{end -}}
+        id,
+	)
+	if err != nil {
+	    logger.Error.Printf("no se pudo ejecutar la sentencia Update de {{.Name}}: %d, %v", id, err)
+		return err
+	}
+
+	return nil
+}
+
+// Delete elimina un registro de la BD
+func (p *Psql) Delete(id uint) error {
+	stmt, err := p.DB.Prepare(psqlDelete)
+	if err != nil {
+	    logger.Error.Printf("no se pudo preparar la sentencia Delete de {{.Name}}: %v", err)
+		return err
+	}
+	defer stmt.Close()
+
+	err = psql.ExecAffectingOneRow(stmt, id)
+	if err != nil {
+	    logger.Error.Printf("no se pudo ejecutar la sentencia Delete de {{.Name}}: %d, %v", id, err)
+		return err
+	}
+
+	return nil
+}
+
+// GetByID consulta un registro por su ID
+func (p *Psql) GetByID(id uint) (*Model, error) {
+	stmt, err := p.DB.Prepare(psqlGetByID)
+	if err != nil {
+	    logger.Error.Printf("no se pudo preparar la sentencia GetByID de {{.Name}}: %v", err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	return p.scanRow(stmt.QueryRow(id))
+}
+
+// GetAll consulta todos los registros de la BD
+func (p *Psql) GetAll() (Models, error) {
+	ms := make(Models, 0)
+
+    stmt, err := p.DB.Prepare(psqlGetAll)
+	if err != nil {
+	    logger.Error.Printf("no se pudo preparar la sentencia GetAll de {{.Name}}: %v", err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+	    logger.Error.Printf("no se pudo ejecutar la sentencia GetAll de {{.Name}}: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		m, err := p.scanRow(rows)
+		if err != nil {
+		    logger.Error.Printf("no se pudo escanear el registro en la sentencia GetByID de {{.Name}}: %v", err)
+			return nil, err
+		}
+
+		ms = append(ms, m)
+	}
+
+	return ms, nil
+}
+
+func (p *Psql) scanRow(s psql.RowScanner) (*Model, error) {
+	m := &Model{}
+	{{range .Fields -}}
+	{{if ne .NotNull "NOT NULL" -}}
+	{{fieldSQLScan .}}
+	{{end -}}
+	{{end -}}
+	nt := pq.NullTime{}
+
+	err := s.Scan(
+	    &m.ID,
+	    {{range .Fields -}}
+	    {{if ne .NotNull "NOT NULL" -}}
+	    &{{.Name}},
+	    {{else -}}
+	    &m.{{ucc .Name}},
+	    {{end -}}
+	    {{end -}}
+	    &m.CreatedAt,
+	    &nt,
+	)
+	if err == sql.ErrNoRows {
+	    return m, err
+	}
+	if err != nil {
+	    logger.Error.Printf("no se pudo escanear el registro en scanRow de {{.Name}}: %v", err)
+		return m, err
+	}
+
+    {{range .Fields -}}
+	{{if ne .NotNull "NOT NULL" -}}
+	{{fieldSQLScanValue .}}
+	{{end -}}
+	{{end -}}
+	m.UpdatedAt = nt.Time
+
+	return m, nil
+}

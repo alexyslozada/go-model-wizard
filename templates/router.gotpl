@@ -1,0 +1,25 @@
+package {{.Name}}
+
+import (
+    // Se debe cambiar la ruta
+    "{{index .PackageRoutes "configuration"}}/configuration"
+	"{{index .PackageRoutes "login"}}/login"
+	"{{index .PackageRoutes "module_role"}}/module_role"
+
+	"github.com/labstack/echo"
+)
+
+// {{ucc .Name}}Route ruta administrador de {{.Name}}
+func {{ucc .Name}}Route(e *echo.Echo, c *configuration.Configuration, db *sql.DB) {
+	scope := module_role.Scope{Name: "{{upp .Name}}"}
+
+	r := e.Group("/api/v1/{{kcc .Table}}", login.ValidateJWT)
+	r.Use(scope.ValidatePermission)
+
+	h := NewHandler(c, db)
+	r.POST("", h.Create)
+	r.GET("", h.GetAll)
+	r.GET("/:id", h.GetByID)
+	r.PUT("/:id", h.Update)
+	r.DELETE("/:id", h.Delete)
+}
