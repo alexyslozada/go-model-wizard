@@ -3,8 +3,7 @@ package {{.Name}}
 import (
     "time"
 
-    // Se debe cambiar la ruta de configuration y logger
-	""{{index .PackageRoutes "configuration"}}/configuration"
+	"{{index .PackageRoutes "configuration"}}/configuration"
 )
 
 // Model estructura de {{.Name}} 
