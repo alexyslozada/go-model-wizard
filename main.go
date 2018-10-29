@@ -1,15 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/fatih/color"
 
 	strcase "github.com/stoewer/go-strcase"
 )
@@ -19,7 +23,8 @@ var (
 	fm   = template.FuncMap{}
 	n    string
 	t    string
-	h    Helper
+	h    string
+	fs   []Field
 	dest string
 )
 
@@ -41,33 +46,7 @@ type Field struct {
 	Name    string
 	Type    string
 	NotNull string
-}
-
-// Helper estructura que permite procesar los campos digitados
-type Helper struct {
-	Fields []Field
-}
-
-// String permite imprimir los campos
-func (h *Helper) String() string {
-	return fmt.Sprint(h.Fields)
-}
-
-// Set permite distribuir los campos escritos en el flag
-func (h *Helper) Set(value string) error {
-	fields := strings.Split(value, ",")
-	for _, v := range fields {
-		field := strings.Split(v, ":")
-		nn := "NOT NULL"
-		if len(field) == 3 {
-			if strings.ToLower(field[2]) == "f" {
-				nn = ""
-			}
-		}
-		f := Field{field[0], field[1], nn}
-		h.Fields = append(h.Fields, f)
-	}
-	return nil
+	Len     int
 }
 
 func setHelpers() {
@@ -176,9 +155,6 @@ func main() {
 	mess := ""
 	modr := ""
 
-	flag.StringVar(&n, "model", "", "nombre del modelo (ej: role)")
-	flag.StringVar(&t, "table", "", "nombre de la tabla (ej: roles)")
-	flag.Var(&h, "fields", "nombre de los campos de la tabla y su tipo, separados por coma sin espacios (ej: name:string,phone:string,address:string,age:int)")
 	flag.StringVar(&dest, "dest", "", "destino de los archivos a crear. siempre se creará después de $GOPATH/src/. Es decir si se coloca github.com/alexys/miproyecto se crearán en $GOPATH/src/github.com/alexys/miproyecto")
 	flag.StringVar(&cnfg, "cnfg", "", "ruta del paquete de configuracion")
 	flag.StringVar(&logg, "logg", "", "ruta del paquete de logger")
@@ -186,12 +162,13 @@ func main() {
 	flag.StringVar(&modr, "modr", "", "ruta del paquete de modulo por role")
 	flag.Parse()
 
-	if n == "" || t == "" || len(h.Fields) == 0 ||
-		dest == "" || cnfg == "" || logg == "" ||
+	if dest == "" || cnfg == "" || logg == "" ||
 		mess == "" || modr == "" {
 		flag.Usage()
 		log.Fatalln("todos los flag son obligatorios")
 	}
+
+	showHeader()
 
 	ps := make(map[string]string)
 	ps["configuration"] = cnfg
@@ -199,7 +176,7 @@ func main() {
 	ps["message"] = mess
 	ps["module_role"] = modr
 
-	m := Model{n, t, h.Fields, ps}
+	m := Model{n, t, fs, ps}
 
 	gopath := os.Getenv("GOPATH")
 	realDest := []string{gopath, "src"}
@@ -287,4 +264,69 @@ func formatFile(filePath string) {
 	if err != nil {
 		fmt.Printf("ERROR: No se pudo ejecutar gofmt")
 	}
+}
+
+func showHeader() {
+	color.Cyan("*************************************")
+	color.Cyan("* Sistema de generación de paquetes *")
+	color.Cyan("*************************************")
+	fmt.Println()
+	color.Cyan("1. Digite el nombre del paquete en singular y minuscula:")
+	fmt.Scan(&n)
+	if n == "" {
+		log.Fatalln("el nombre del paquete es obligatorio")
+	}
+	color.Cyan("2. Digite el nombre de la tabla en plural y minuscula:")
+	fmt.Scan(&t)
+	if t == "" {
+		log.Fatalln("el nombre de la tabla es obligatorio")
+	}
+
+	color.Cyan(`
+		3. Digite los campos del modelo.
+		El formato es: nombre:tipo:nonulo:tamaño.
+		* nombre: nombre del campo, minúsculas
+		* tipo: string, int, float32, float64, time.Time, bool
+		* nonulo: f si permite nulos, t si no permite nulos
+		* tamaño: número entero. Sólo aplica para string`)
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	fields := scanner.Text()
+	err := scanner.Err()
+	if err != nil {
+		log.Fatalf("error al leer los campos: %v", err)
+	}
+
+	fs = getFields(fields)
+	if len(fs) == 0 {
+		log.Fatalf("no se han recibido campos del modelo")
+	}
+}
+
+func getFields(value string) []Field {
+	var err error
+	rs := make([]Field, 0)
+	fields := strings.Split(value, ",")
+	for _, v := range fields {
+		v = strings.TrimSpace(v)
+		field := strings.Split(v, ":")
+		nn := "NOT NULL"
+		i := 0
+		if len(field) == 3 {
+			if strings.ToLower(field[2]) == "f" {
+				nn = ""
+			}
+		}
+		if len(field) == 4 {
+			i, err = strconv.Atoi(field[3])
+			if err != nil {
+				log.Fatalf("%s no es un número válido: %v", field[3], err)
+			}
+
+		}
+		f := Field{field[0], field[1], nn, i}
+		rs = append(rs, f)
+	}
+
+	return rs
 }
