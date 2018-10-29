@@ -2,6 +2,7 @@ package {{.Name}}
 
 import (
     "time"
+    "database/sql"
 
 	"{{index .PackageRoutes "configuration"}}/configuration"
 )

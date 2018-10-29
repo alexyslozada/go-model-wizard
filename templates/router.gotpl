@@ -1,6 +1,8 @@
 package {{.Name}}
 
 import (
+    "database/sql"
+
     "{{index .PackageRoutes "configuration"}}/configuration"
 	"{{index .PackageRoutes "login"}}/login"
 	"{{index .PackageRoutes "module_role"}}/module_role"

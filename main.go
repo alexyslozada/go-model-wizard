@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -19,13 +18,18 @@ import (
 )
 
 var (
-	tpl  *template.Template
-	fm   = template.FuncMap{}
-	n    string
-	t    string
-	h    string
-	fs   []Field
+	tpl *template.Template
+	fm  = template.FuncMap{}
+	// n nombre del paqute
+	n string
+	// t nombre de la tabla
+	t string
+	// fs los campos del modelo
+	fs []Field
+	// dest destino del paquete
 	dest string
+	// rutas de los paquetes de configuración, logger, message, model_role
+	ps map[string]string
 )
 
 func init() {
@@ -76,7 +80,7 @@ func setHelpers() {
 			case "int":
 				return "INT"
 			case "string":
-				return "VARCHAR(SIZE)"
+				return "VARCHAR"
 			case "bool":
 				return "BOOLEAN"
 			case "time.Time":
@@ -149,32 +153,9 @@ func setHelpers() {
 }
 
 func main() {
-	// Ruta a los paquetes de configuracion, logger, mensajes, module_role
-	cnfg := ""
-	logg := ""
-	mess := ""
-	modr := ""
-
-	flag.StringVar(&dest, "dest", "", "destino de los archivos a crear. siempre se creará después de $GOPATH/src/. Es decir si se coloca github.com/alexys/miproyecto se crearán en $GOPATH/src/github.com/alexys/miproyecto")
-	flag.StringVar(&cnfg, "cnfg", "", "ruta del paquete de configuracion")
-	flag.StringVar(&logg, "logg", "", "ruta del paquete de logger")
-	flag.StringVar(&mess, "mess", "", "ruta del paquete de mensajes")
-	flag.StringVar(&modr, "modr", "", "ruta del paquete de modulo por role")
-	flag.Parse()
-
-	if dest == "" || cnfg == "" || logg == "" ||
-		mess == "" || modr == "" {
-		flag.Usage()
-		log.Fatalln("todos los flag son obligatorios")
-	}
-
 	showHeader()
 
-	ps := make(map[string]string)
-	ps["configuration"] = cnfg
-	ps["logger"] = logg
-	ps["message"] = mess
-	ps["module_role"] = modr
+	color.Green("Iniciando proceso...")
 
 	m := Model{n, t, fs, ps}
 
@@ -196,6 +177,8 @@ func main() {
 	generatePsql(m, pk)
 	generateHandler(m, pk)
 	generateRoute(m, pk)
+
+	color.Green("Proceso finalizado.")
 }
 
 // createDir crea el directorio de destino de los archivos
@@ -274,46 +257,142 @@ func showHeader() {
 	color.Cyan("1. Digite el nombre del paquete en singular y minuscula:")
 	fmt.Scan(&n)
 	if n == "" {
-		log.Fatalln("el nombre del paquete es obligatorio")
+		color.Red("el nombre del paquete es obligatorio")
+		os.Exit(1)
 	}
 	color.Cyan("2. Digite el nombre de la tabla en plural y minuscula:")
 	fmt.Scan(&t)
 	if t == "" {
-		log.Fatalln("el nombre de la tabla es obligatorio")
+		color.Red("el nombre de la tabla es obligatorio")
+		os.Exit(1)
 	}
 
-	color.Cyan(`
-		3. Digite los campos del modelo.
-		El formato es: nombre:tipo:nonulo:tamaño.
-		* nombre: nombre del campo, minúsculas
-		* tipo: string, int, float32, float64, time.Time, bool
-		* nonulo: f si permite nulos, t si no permite nulos
-		* tamaño: número entero. Sólo aplica para string`)
+	color.Cyan("3. Digite los campos del modelo.")
+	color.Cyan("El formato es: nombre:tipo:nonulo:tamaño.")
+	color.Cyan("* cada campo debe estar separada por un espacio. ej:")
+	color.Cyan("name:string:f:50 age:int birth:time.Time:t other:bool")
+	color.Cyan("* nombre: nombre del campo, minúsculas.")
+	color.Cyan("* tipo: string, int, float32, float64, time.Time, bool.")
+	color.Cyan("* nonulo: t si permite nulos, f no permite nulos. (por defecto es f)")
+	color.Cyan("* tamaño: número entero. Sólo aplica para string.")
+
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	fields := scanner.Text()
 	err := scanner.Err()
 	if err != nil {
-		log.Fatalf("error al leer los campos: %v", err)
+		color.Red("error al leer los campos:", err)
+		os.Exit(1)
 	}
 
 	fs = getFields(fields)
 	if len(fs) == 0 {
-		log.Fatalf("no se han recibido campos del modelo")
+		color.Red("no se han recibido campos del modelo")
+		os.Exit(1)
+	}
+
+	color.Cyan("4. Destino del paquete")
+	color.Cyan("* se debe colocar la ruta del destino sin $GOPATH/src/")
+	color.Cyan("* ej: github.com/alexyslozada/miproyecto/modelos")
+	fmt.Scan(&dest)
+	if dest == "" {
+		color.Red("el destino es obligatorio")
+		os.Exit(1)
+	}
+
+	ps = make(map[string]string)
+	color.Cyan("5. Ubicación del paquete de configuracion")
+	color.Cyan("* se debe colocar sin $GOPATH/src/")
+	v := ""
+	fmt.Scan(&v)
+	ps["configuration"] = v
+	if ps["configuration"] == "" {
+		color.Red("la ubicación del paquete es obligatorio")
+		os.Exit(1)
+	}
+
+	color.Cyan("6. Ubicación del paquete de logger")
+	color.Cyan("* se debe colocar sin $GOPATH/src/")
+	color.Cyan("* si es la misma ruta de configuration, coloque el signo igual: =")
+	fmt.Scan(&v)
+	if strings.TrimSpace(v) == "=" {
+		ps["logger"] = ps["configuration"]
+	} else {
+		ps["logger"] = v
+	}
+
+	if ps["logger"] == "" {
+		color.Red("la ubicación del paquete es obligatorio")
+		os.Exit(1)
+	}
+
+	color.Cyan("7. Ubicación del paquete de mensajes")
+	color.Cyan("* se debe colocar sin $GOPATH/src/")
+	color.Cyan("* si es la misma ruta de configuration, coloque el signo igual: =")
+	fmt.Scan(&v)
+	if strings.TrimSpace(v) == "=" {
+		ps["message"] = ps["configuration"]
+	} else {
+		ps["message"] = v
+	}
+	if ps["message"] == "" {
+		color.Red("la ubicación del paquete es obligatorio")
+		os.Exit(1)
+	}
+
+	color.Cyan("8. Ubicación del paquete de roles por módulo")
+	color.Cyan("* se debe colocar sin $GOPATH/src/")
+	color.Cyan("* si es la misma ruta de configuration, coloque el signo igual: =")
+	fmt.Scan(&v)
+	if strings.TrimSpace(v) == "=" {
+		ps["module_role"] = ps["configuration"]
+	} else {
+		ps["module_role"] = v
+	}
+	if ps["module_role"] == "" {
+		color.Red("la ubicación del paquete es obligatorio")
+		os.Exit(1)
+	}
+
+	color.Cyan("9. Ubicación del paquete de login")
+	color.Cyan("* se debe colocar sin $GOPATH/src/")
+	color.Cyan("* si es la misma ruta de configuration, coloque el signo igual: =")
+	fmt.Scan(&v)
+	if strings.TrimSpace(v) == "=" {
+		ps["login"] = ps["configuration"]
+	} else {
+		ps["login"] = v
+	}
+	if ps["login"] == "" {
+		color.Red("la ubicación del paquete es obligatorio")
+		os.Exit(1)
+	}
+
+	color.Cyan("10. Ubicación del paquete de psql (utilidades de sql)")
+	color.Cyan("* se debe colocar sin $GOPATH/src/")
+	color.Cyan("* si es la misma ruta de configuration, coloque el signo igual: =")
+	fmt.Scan(&v)
+	if strings.TrimSpace(v) == "=" {
+		ps["psql"] = ps["configuration"]
+	} else {
+		ps["psql"] = v
+	}
+	if ps["psql"] == "" {
+		color.Red("la ubicación del paquete es obligatorio")
+		os.Exit(1)
 	}
 }
 
 func getFields(value string) []Field {
 	var err error
 	rs := make([]Field, 0)
-	fields := strings.Split(value, ",")
+	fields := strings.Split(value, " ")
 	for _, v := range fields {
-		v = strings.TrimSpace(v)
 		field := strings.Split(v, ":")
 		nn := "NOT NULL"
 		i := 0
-		if len(field) == 3 {
-			if strings.ToLower(field[2]) == "f" {
+		if len(field) >= 3 {
+			if strings.ToLower(field[2]) == "t" {
 				nn = ""
 			}
 		}

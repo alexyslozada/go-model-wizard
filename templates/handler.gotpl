@@ -26,9 +26,9 @@ func NewHandler(c *configuration.Configuration, db *sql.DB) *Handler {
 // Create handler para crear un registro de {{.Name}}
 func (h *Handler) Create(c echo.Context) error {
 	mr := message.ResponseMessage{}
-	m := {{.Name}}.Model{}
+	m := &Model{}
 
-	err := c.Bind(&m)
+	err := c.Bind(m)
 	if err != nil {
                 logger.Warning.Printf("la estructura {{.Name}} no es correcta. Handler Create: %v", err)
 		mr.AddError(message.BadStructureType, message.BadStructureCode, "la estructura del objeto no es correcta", "revise la documentación del paquete")
@@ -51,7 +51,7 @@ func (h *Handler) Create(c echo.Context) error {
 // Update handler para actualizar un registro de {{.Name}}
 func (h *Handler) Update(c echo.Context) error {
 	mr := message.ResponseMessage{}
-	m := {{.Name}}.Model{}
+	m := &Model{}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -60,7 +60,7 @@ func (h *Handler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-	err = c.Bind(&m)
+	err = c.Bind(m)
 	if err != nil {
 		logger.Warning.Printf("la estructura {{.Name}} no es correcta. Handler Update: %v", err)
 		mr.AddError(message.BadDataType, message.BadDataCode, "la estructura enviada no es correcta", "revise la documentación")
@@ -84,7 +84,6 @@ func (h *Handler) Update(c echo.Context) error {
 // Delete handler para eliminar un registro de {{.Name}}
 func (h *Handler) Delete(c echo.Context) error {
 	mr := message.ResponseMessage{}
-	m := {{.Name}}.Model{}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -116,7 +115,7 @@ func (h *Handler) GetByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-    ms := NewStorage(h.Configuration, h.DB)
+    ms := NewStore(h.Configuration, h.DB)
 	res, err := ms.GetByID(uint(id))
 	if err == sql.ErrNoRows {
 		mr.AddMessage(message.NoDataType, message.NoDataCode, "no existen datos", "")

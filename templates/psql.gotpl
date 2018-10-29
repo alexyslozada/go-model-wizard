@@ -4,8 +4,8 @@ package {{.Name}}
 import (
 	"database/sql"
 
-	"{{index .PackageRoutes "configuration"}}/configuration"
 	"{{index .PackageRoutes "logger"}}/logger"
+    "{{index .PackageRoutes "psql"}}/psql"
 
 	"github.com/lib/pq"
 )

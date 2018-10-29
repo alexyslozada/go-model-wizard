@@ -2,7 +2,7 @@
 CREATE TABLE {{.Table}}(
     id SERIAL NOT NULL,
     {{range .Fields -}}
-    {{.Name}} {{sqlType .Type}} {{.NotNull}},
+    {{.Name}} {{sqlType .Type}} {{if gt .Len 0}}({{.Len}}){{end}} {{.NotNull}},
     {{end -}}
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP,
