@@ -7,19 +7,19 @@ import (
 
 	"github.com/labstack/echo"
 
-    "{{index .PackageRoutes "configuration"}}/configuration"
+    "github.com/alexyslozada/config-go"
 	"{{index .PackageRoutes "logger"}}/logger"
     "{{index .PackageRoutes "message"}}/message"
 )
 
 // Handler estructura que tiene los handler de {{.Name}}
 type Handler struct {
-    Configuration *configuration.Configuration
+    Configuration *config.Configuration
     DB            *sql.DB
 }
 
 // NewHandler devuelve un puntero a Handler.
-func NewHandler(c *configuration.Configuration, db *sql.DB) *Handler {
+func NewHandler(c *config.Configuration, db *sql.DB) *Handler {
     return &Handler{c, db}
 }
 

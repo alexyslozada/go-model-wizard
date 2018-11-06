@@ -4,7 +4,7 @@ import (
     "time"
     "database/sql"
 
-	"{{index .PackageRoutes "configuration"}}/configuration"
+	"github.com/alexyslozada/config-go"
 )
 
 // Model estructura de {{.Name}} 
@@ -27,7 +27,7 @@ type ModelStore struct {
 
 // NewStore debe invocarse para obtener un ModelStore
 // esta función configura el storage para conectarse a la BD
-func NewStore(c *configuration.Configuration, db *sql.DB) *ModelStore {
+func NewStore(c *config.Configuration, db *sql.DB) *ModelStore {
     ms := &ModelStore{}
     ms.Storage = newStorage(c, db)
     return ms
