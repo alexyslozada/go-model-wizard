@@ -4,6 +4,7 @@ import (
     "database/sql"
 
     "github.com/alexyslozada/config-go"
+    log "github.com/alexyslozada/logger-go"
 	"{{index .PackageRoutes "login"}}/login"
 	"{{index .PackageRoutes "module_role"}}/module_role"
 
@@ -11,13 +12,13 @@ import (
 )
 
 // {{ucc .Name}}Route ruta administrador de {{.Name}}
-func {{ucc .Name}}Route(e *echo.Echo, c *config.Configuration, db *sql.DB) {
+func {{ucc .Name}}Route(e *echo.Echo, c *config.Configuration, db *sql.DB, l *log.Model) {
 	scope := module_role.Scope{Name: "{{upp .Name}}"}
 
 	r := e.Group("/api/v1/{{kcc .Table}}", login.ValidateJWT)
 	r.Use(scope.ValidatePermission)
 
-	h := NewHandler(c, db)
+	h := NewHandler(c, db, l)
 	r.POST("", h.Create)
 	r.GET("", h.GetAll)
 	r.GET("/:id", h.GetByID)

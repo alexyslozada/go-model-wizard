@@ -110,39 +110,11 @@ func scanSourcePackages() {
 	ps = make(map[string]string)
 	var v string
 
-	color.Cyan("5. Ubicación del paquete de logger")
-	color.Cyan("* se debe colocar sin $GOPATH/src/")
-	fmt.Scan(&v)
-	ps["logger"] = v
-
-	if ps["logger"] == "" {
-		color.Red("la ubicación del paquete es obligatorio")
-		os.Exit(1)
-	}
-
-	color.Cyan("6. Ubicación del paquete de mensajes")
-	color.Cyan("* se debe colocar sin $GOPATH/src/")
-	color.Cyan("* si es la misma ruta del paquete logger, coloque el signo igual: =")
-	fmt.Scan(&v)
-	if strings.TrimSpace(v) == "=" {
-		ps["message"] = ps["logger"]
-	} else {
-		ps["message"] = v
-	}
-	if ps["message"] == "" {
-		color.Red("la ubicación del paquete es obligatorio")
-		os.Exit(1)
-	}
-
 	color.Cyan("7. Ubicación del paquete de roles por módulo")
 	color.Cyan("* se debe colocar sin $GOPATH/src/")
 	color.Cyan("* si es la misma ruta de logger, coloque el signo igual: =")
 	fmt.Scan(&v)
-	if strings.TrimSpace(v) == "=" {
-		ps["module_role"] = ps["logger"]
-	} else {
-		ps["module_role"] = v
-	}
+	ps["module_role"] = v
 	if ps["module_role"] == "" {
 		color.Red("la ubicación del paquete es obligatorio")
 		os.Exit(1)
@@ -150,10 +122,10 @@ func scanSourcePackages() {
 
 	color.Cyan("8. Ubicación del paquete de login")
 	color.Cyan("* se debe colocar sin $GOPATH/src/")
-	color.Cyan("* si es la misma ruta de logger, coloque el signo igual: =")
+	color.Cyan("* si es la misma ruta de roles por módulo, coloque el signo igual: =")
 	fmt.Scan(&v)
 	if strings.TrimSpace(v) == "=" {
-		ps["login"] = ps["logger"]
+		ps["login"] = ps["module_role"]
 	} else {
 		ps["login"] = v
 	}
@@ -164,10 +136,10 @@ func scanSourcePackages() {
 
 	color.Cyan("9. Ubicación del paquete de psql (utilidades de sql)")
 	color.Cyan("* se debe colocar sin $GOPATH/src/")
-	color.Cyan("* si es la misma ruta de logger, coloque el signo igual: =")
+	color.Cyan("* si es la misma ruta de roles por modulo, coloque el signo igual: =")
 	fmt.Scan(&v)
 	if strings.TrimSpace(v) == "=" {
-		ps["psql"] = ps["logger"]
+		ps["psql"] = ps["module_role"]
 	} else {
 		ps["psql"] = v
 	}

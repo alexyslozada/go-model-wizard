@@ -4,7 +4,6 @@ package {{.Name}}
 import (
 	"database/sql"
 
-	"{{index .PackageRoutes "logger"}}/logger"
     "{{index .PackageRoutes "psql"}}/psql"
 
 	"github.com/lib/pq"
@@ -27,7 +26,6 @@ const (
 func (p *Psql) Create(m *Model) error {
 	stmt, err := p.DB.Prepare(psqlInsert)
 	if err != nil {
-	    logger.Error.Printf("no se pudo preparar la sentencia Create de {{.Name}}: %v", err)
 		return err
 	}
 	defer stmt.Close()
@@ -38,7 +36,6 @@ func (p *Psql) Create(m *Model) error {
 	    {{end -}}
 	).Scan(&m.ID, &m.CreatedAt)
 	if err != nil {
-	    logger.Error.Printf("no se pudo ejecutar la sentencia Create de {{.Name}}: %v", err)
 		return err
 	}
 
@@ -49,7 +46,6 @@ func (p *Psql) Create(m *Model) error {
 func (p *Psql) Update(id uint, m *Model) error {
 	stmt, err := p.DB.Prepare(psqlUpdate)
 	if err != nil {
-	    logger.Error.Printf("no se pudo preparar la sentencia Update de {{.Name}}: %v", err)
 		return err
 	}
 	defer stmt.Close()
@@ -62,7 +58,6 @@ func (p *Psql) Update(id uint, m *Model) error {
         id,
 	)
 	if err != nil {
-	    logger.Error.Printf("no se pudo ejecutar la sentencia Update de {{.Name}}: %d, %v", id, err)
 		return err
 	}
 
@@ -73,14 +68,12 @@ func (p *Psql) Update(id uint, m *Model) error {
 func (p *Psql) Delete(id uint) error {
 	stmt, err := p.DB.Prepare(psqlDelete)
 	if err != nil {
-	    logger.Error.Printf("no se pudo preparar la sentencia Delete de {{.Name}}: %v", err)
 		return err
 	}
 	defer stmt.Close()
 
 	err = psql.ExecAffectingOneRow(stmt, id)
 	if err != nil {
-	    logger.Error.Printf("no se pudo ejecutar la sentencia Delete de {{.Name}}: %d, %v", id, err)
 		return err
 	}
 
@@ -91,7 +84,6 @@ func (p *Psql) Delete(id uint) error {
 func (p *Psql) GetByID(id uint) (*Model, error) {
 	stmt, err := p.DB.Prepare(psqlGetByID)
 	if err != nil {
-	    logger.Error.Printf("no se pudo preparar la sentencia GetByID de {{.Name}}: %v", err)
 		return nil, err
 	}
 	defer stmt.Close()
@@ -105,14 +97,12 @@ func (p *Psql) GetAll() (Models, error) {
 
     stmt, err := p.DB.Prepare(psqlGetAll)
 	if err != nil {
-	    logger.Error.Printf("no se pudo preparar la sentencia GetAll de {{.Name}}: %v", err)
 		return nil, err
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.Query()
 	if err != nil {
-	    logger.Error.Printf("no se pudo ejecutar la sentencia GetAll de {{.Name}}: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -120,7 +110,6 @@ func (p *Psql) GetAll() (Models, error) {
 	for rows.Next() {
 		m, err := p.scanRow(rows)
 		if err != nil {
-		    logger.Error.Printf("no se pudo escanear el registro en la sentencia GetByID de {{.Name}}: %v", err)
 			return nil, err
 		}
 
@@ -155,7 +144,6 @@ func (p *Psql) scanRow(s psql.RowScanner) (*Model, error) {
 	    return m, err
 	}
 	if err != nil {
-	    logger.Error.Printf("no se pudo escanear el registro en scanRow de {{.Name}}: %v", err)
 		return m, err
 	}
 
