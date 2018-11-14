@@ -9,7 +9,7 @@ import (
 
     "github.com/alexyslozada/config-go"
 	log "github.com/alexyslozada/logger-go"
-    message "github.com/alexyslozada/message-go"
+    message "github.com/alexyslozada/messages-go"
 )
 
 // Handler estructura que tiene los handler de {{.Name}}
@@ -32,7 +32,7 @@ func (h *Handler) Create(c echo.Context) error {
 	err := c.Bind(m)
 	if err != nil {
         h.Logger.Warning.Printf("la estructura {{.Name}} no es correcta. Handler Create: %v", err)
-		mr.AddError(http.StatusBadRequest, "la estructura del objeto no es correcta", "revise la documentación del paquete")
+		mr.AddError(strconv.Itoa(http.StatusBadRequest), "la estructura del objeto no es correcta", "revise la documentación del paquete")
         return c.JSON(http.StatusBadRequest, mr)
 	}
 
@@ -40,11 +40,11 @@ func (h *Handler) Create(c echo.Context) error {
 	err = ms.Create(m)
 	if err != nil {
 		h.Logger.Error.Printf("no se pudo registrar el modelo {{.Name}}. Handler Create: %v", err)
-        mr.AddError(http.StatusInternalServerError, "no fue posible crear el registro", "revise los log del servidor para más información")
+        mr.AddError(strconv.Itoa(http.StatusInternalServerError), "no fue posible crear el registro", "revise los log del servidor para más información")
 		return c.JSON(http.StatusInternalServerError, mr)
 	}
 
-	mr.AddMessage(http.StatusCreated, "registro creado", "")
+	mr.AddMessage(strconv.Itoa(http.StatusCreated), "registro creado", "")
     mr.Data = m
     return c.JSON(http.StatusCreated, mr)
 }
@@ -57,14 +57,14 @@ func (h *Handler) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.Logger.Warning.Printf("el id debe ser numérico. Handler {{.Name}} Update: %v", err)
-		mr.AddError(http.StatusBadRequest, "el id debe ser un número entero", "envíe un número entero")
+		mr.AddError(strconv.Itoa(http.StatusBadRequest), "el id debe ser un número entero", "envíe un número entero")
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
 	err = c.Bind(m)
 	if err != nil {
 		h.Logger.Warning.Printf("la estructura {{.Name}} no es correcta. Handler Update: %v", err)
-		mr.AddError(http.StatusBadRequest, "la estructura enviada no es correcta", "revise la documentación")
+		mr.AddError(strconv.Itoa(http.StatusBadRequest), "la estructura enviada no es correcta", "revise la documentación")
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
@@ -73,11 +73,11 @@ func (h *Handler) Update(c echo.Context) error {
 	err = ms.Update(m.ID, m)
 	if err != nil {
 		h.Logger.Error.Printf("error al actualizar {{.Name}}. Handler Update: %v", err)
-		mr.AddError(http.StatusInternalServerError, "no se pudo actualizar el registro", "revise los logs del servidor")
+		mr.AddError(strconv.Itoa(http.StatusInternalServerError), "no se pudo actualizar el registro", "revise los logs del servidor")
 		return c.JSON(http.StatusInternalServerError, mr)
 	}
 
-	mr.AddMessage(http.StatusOK, "registro actualizado", "")
+	mr.AddMessage(strconv.Itoa(http.StatusOK), "registro actualizado", "")
 	mr.Data = m
 	return c.JSON(http.StatusOK, mr)
 }
@@ -89,7 +89,7 @@ func (h *Handler) Delete(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.Logger.Warning.Printf("el id debe ser numérico. Handler {{.Name}} Delete: %v", err)
-		mr.AddError(http.StatusBadRequest, "el id debe ser un número entero", "envíe un número entero")
+		mr.AddError(strconv.Itoa(http.StatusBadRequest), "el id debe ser un número entero", "envíe un número entero")
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
@@ -97,11 +97,11 @@ func (h *Handler) Delete(c echo.Context) error {
 	err = ms.Delete(uint(id))
 	if err != nil {
 		h.Logger.Error.Printf("error al borrar {{.Name}}: %d. Handler Delete: %v", id, err)
-		mr.AddError(http.StatusInternalServerError, "no se pudo eliminar el registro", "revise los log del servidor")
+		mr.AddError(strconv.Itoa(http.StatusInternalServerError), "no se pudo eliminar el registro", "revise los log del servidor")
 		return c.JSON(http.StatusInternalServerError, mr)
 	}
 
-	mr.AddMessage(http.StatusOK, "registro eliminado", "")
+	mr.AddMessage(strconv.Itoa(http.StatusOK), "registro eliminado", "")
 	return c.JSON(http.StatusOK, mr)
 }
 
@@ -112,23 +112,23 @@ func (h *Handler) GetByID(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.Logger.Warning.Printf("el id debe ser numérico. Handler {{.Name}} GetByID: %v", err)
-		mr.AddError(http.StatusBadRequest, "el id debe ser un número entero", "envíe un número entero")
+		mr.AddError(strconv.Itoa(http.StatusBadRequest), "el id debe ser un número entero", "envíe un número entero")
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
     ms := NewStore(h.Configuration, h.DB)
 	res, err := ms.GetByID(uint(id))
 	if err == sql.ErrNoRows {
-		mr.AddMessage(http.StatusNoContent, "no existen datos", "")
+		mr.AddMessage(strconv.Itoa(http.StatusNoContent), "no existen datos", "")
 		return c.JSON(http.StatusOK, mr)
 	}
 	if err != nil {
 		h.Logger.Error.Printf("no se pudo obtener los datos solicitados {{.Name}}: %d. Handler GetByID: %v", id, err)
-		mr.AddError(http.StatusInternalServerError, "no se pudo consultar la información", "revise los log del servidor")
+		mr.AddError(strconv.Itoa(http.StatusInternalServerError), "no se pudo consultar la información", "revise los log del servidor")
 		return c.JSON(http.StatusInternalServerError, mr)
 	}
 
-	mr.AddMessage(http.StatusOK, "Ok", "")
+	mr.AddMessage(strconv.Itoa(http.StatusOK), "Ok", "")
 	mr.Data = res
 	return c.JSON(http.StatusOK, mr)
 }
@@ -141,11 +141,11 @@ func (h *Handler) GetAll(c echo.Context) error {
 	res, err := ms.GetAll()
 	if err != nil {
 		h.Logger.Error.Printf("no se pudo obtener la información de {{.Name}}. Handler GetAll: %v", err)
-		mr.AddError(http.StatusInternalServerError, "no se pudo consultar la información", "revise los log del servidor")
+		mr.AddError(strconv.Itoa(http.StatusInternalServerError), "no se pudo consultar la información", "revise los log del servidor")
 		return c.JSON(http.StatusInternalServerError, mr)
 	}
 
-	mr.AddMessage(http.StatusOK, "Ok", "")
+	mr.AddMessage(strconv.Itoa(http.StatusOK), "Ok", "")
 	mr.Data = res
 	return c.JSON(http.StatusOK, mr)
 }

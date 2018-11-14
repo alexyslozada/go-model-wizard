@@ -110,7 +110,7 @@ func scanSourcePackages() {
 	ps = make(map[string]string)
 	var v string
 
-	color.Cyan("7. Ubicación del paquete de roles por módulo")
+	color.Cyan("1. Ubicación del paquete de roles por módulo")
 	color.Cyan("* se debe colocar sin $GOPATH/src/")
 	color.Cyan("* si es la misma ruta de logger, coloque el signo igual: =")
 	fmt.Scan(&v)
@@ -120,7 +120,7 @@ func scanSourcePackages() {
 		os.Exit(1)
 	}
 
-	color.Cyan("8. Ubicación del paquete de login")
+	color.Cyan("2. Ubicación del paquete de login")
 	color.Cyan("* se debe colocar sin $GOPATH/src/")
 	color.Cyan("* si es la misma ruta de roles por módulo, coloque el signo igual: =")
 	fmt.Scan(&v)
@@ -134,7 +134,7 @@ func scanSourcePackages() {
 		os.Exit(1)
 	}
 
-	color.Cyan("9. Ubicación del paquete de psql (utilidades de sql)")
+	color.Cyan("3. Ubicación del paquete de psql (utilidades de sql)")
 	color.Cyan("* se debe colocar sin $GOPATH/src/")
 	color.Cyan("* si es la misma ruta de roles por modulo, coloque el signo igual: =")
 	fmt.Scan(&v)
