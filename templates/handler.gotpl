@@ -36,7 +36,7 @@ func (h *Handler) Create(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, mr)
 	}
 
-	ms := NewStore(h.Configuration, h.DB)
+	ms := NewStore(h.Configuration, h.DB, h.Logger)
 	err = ms.Create(m)
 	if err != nil {
 		h.Logger.Error.Printf("no se pudo registrar el modelo {{.Name}}. Handler Create: %v", err)
@@ -68,7 +68,7 @@ func (h *Handler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-    ms := NewStore(h.Configuration, h.DB)
+    ms := NewStore(h.Configuration, h.DB, h.Logger)
 	m.ID = uint(id)
 	err = ms.Update(m.ID, m)
 	if err != nil {
@@ -93,7 +93,7 @@ func (h *Handler) Delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-    ms := NewStore(h.Configuration, h.DB)
+    ms := NewStore(h.Configuration, h.DB, h.Logger)
 	err = ms.Delete(uint(id))
 	if err != nil {
 		h.Logger.Error.Printf("error al borrar {{.Name}}: %d. Handler Delete: %v", id, err)
@@ -116,7 +116,7 @@ func (h *Handler) GetByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-    ms := NewStore(h.Configuration, h.DB)
+    ms := NewStore(h.Configuration, h.DB, h.Logger)
 	res, err := ms.GetByID(uint(id))
 	if err == sql.ErrNoRows {
 		mr.AddMessage(strconv.Itoa(http.StatusNoContent), "no existen datos", "")
@@ -137,7 +137,7 @@ func (h *Handler) GetByID(c echo.Context) error {
 func (h *Handler) GetAll(c echo.Context) error {
 	mr := message.ResponseMessage{}
 
-    ms := NewStore(h.Configuration, h.DB)
+    ms := NewStore(h.Configuration, h.DB, h.Logger)
 	res, err := ms.GetAll()
 	if err != nil {
 		h.Logger.Error.Printf("no se pudo obtener la información de {{.Name}}. Handler GetAll: %v", err)

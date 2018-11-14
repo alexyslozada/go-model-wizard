@@ -15,6 +15,9 @@ go-model-wizard
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Archivos de configuración de pruebas
+config.json
+
 ### Go Patch ###
 /vendor/
 /Godeps/

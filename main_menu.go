@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -20,8 +22,7 @@ func showMainMenu() {
 	scanName()
 	scanTable()
 	scanFields()
-	scanDest()
-	scanSourcePackages()
+	scanSourceConfig()
 }
 
 func scanName() {
@@ -95,56 +96,25 @@ func getFields(value string) []Field {
 	return rs
 }
 
-func scanDest() {
-	color.Cyan("4. Destino del paquete")
-	color.Cyan("* se debe colocar la ruta del destino sin $GOPATH/src/")
-	color.Cyan("* ej: github.com/alexyslozada/miproyecto/modelos")
-	fmt.Scan(&dest)
-	if dest == "" {
-		color.Red("el destino es obligatorio")
-		os.Exit(1)
-	}
-}
-
-func scanSourcePackages() {
-	ps = make(map[string]string)
+func scanSourceConfig() {
 	var v string
+	ps = make(map[string]string, 0)
 
-	color.Cyan("1. Ubicación del paquete de roles por módulo")
-	color.Cyan("* se debe colocar sin $GOPATH/src/")
-	color.Cyan("* si es la misma ruta de logger, coloque el signo igual: =")
+	color.Cyan("1. Ubicación del archivo de configuracion (json)")
+	color.Cyan("* ruta absoluta o relativa al archivo de configuracion")
 	fmt.Scan(&v)
-	ps["module_role"] = v
-	if ps["module_role"] == "" {
-		color.Red("la ubicación del paquete es obligatorio")
+
+	file, err := ioutil.ReadFile(v)
+	if err != nil {
+		e := fmt.Sprintf("no se pudo abrir el archivo de configuración: %v", err)
+		color.Red(e)
 		os.Exit(1)
 	}
 
-	color.Cyan("2. Ubicación del paquete de login")
-	color.Cyan("* se debe colocar sin $GOPATH/src/")
-	color.Cyan("* si es la misma ruta de roles por módulo, coloque el signo igual: =")
-	fmt.Scan(&v)
-	if strings.TrimSpace(v) == "=" {
-		ps["login"] = ps["module_role"]
-	} else {
-		ps["login"] = v
-	}
-	if ps["login"] == "" {
-		color.Red("la ubicación del paquete es obligatorio")
-		os.Exit(1)
-	}
-
-	color.Cyan("3. Ubicación del paquete de psql (utilidades de sql)")
-	color.Cyan("* se debe colocar sin $GOPATH/src/")
-	color.Cyan("* si es la misma ruta de roles por modulo, coloque el signo igual: =")
-	fmt.Scan(&v)
-	if strings.TrimSpace(v) == "=" {
-		ps["psql"] = ps["module_role"]
-	} else {
-		ps["psql"] = v
-	}
-	if ps["psql"] == "" {
-		color.Red("la ubicación del paquete es obligatorio")
+	err = json.Unmarshal(file, &ps)
+	if err != nil {
+		e := fmt.Sprintf("no se pudo convertir la configuración en mapa: %v", err)
+		color.Red(e)
 		os.Exit(1)
 	}
 }

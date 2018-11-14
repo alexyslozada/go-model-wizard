@@ -21,8 +21,6 @@ var (
 	t string
 	// fs los campos del modelo
 	fs []Field
-	// dest destino del paquete
-	dest string
 	// rutas de los paquetes de configuración, logger, message, model_role
 	ps map[string]string
 )
@@ -40,7 +38,7 @@ func main() {
 	m := Model{n, t, fs, ps}
 	gopath := os.Getenv("GOPATH")
 	realDest := []string{gopath, "src"}
-	realDest = append(realDest, strings.Split(dest, "/")...)
+	realDest = append(realDest, strings.Split(ps["dest"], "/")...)
 	gp := filepath.Join(realDest...)
 	pks := filepath.Join(gp, "models")
 	ds := filepath.Join(gp, "database")

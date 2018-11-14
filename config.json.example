@@ -1,0 +1,6 @@
+{
+  "dest": "/ruta/al/destino",
+  "module_role": "/ruta/a/roles/x/modulo",
+  "login": "/ruta/a/login",
+  "psql": "/ruta/a/psql"
+}
