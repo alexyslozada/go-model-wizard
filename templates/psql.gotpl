@@ -4,7 +4,7 @@ package {{.Name}}
 import (
 	"database/sql"
 
-    "{{index .PackageRoutes "psql"}}/psql"
+    psql "github.com/alexyslozada/sqlutils-go"
 
 	"github.com/lib/pq"
 )
