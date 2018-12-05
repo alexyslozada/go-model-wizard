@@ -40,7 +40,7 @@ func main() {
 	realDest := []string{gopath, "src"}
 	realDest = append(realDest, strings.Split(ps["dest"], "/")...)
 	gp := filepath.Join(realDest...)
-	pks := filepath.Join(gp, "models")
+	pks := filepath.Join(gp, ps["packages_folder"])
 	ds := filepath.Join(gp, "database")
 
 	pk := filepath.Join(pks, n)
