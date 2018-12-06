@@ -2,13 +2,8 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/fatih/color"
 )
@@ -22,7 +17,6 @@ func showMainMenu() {
 	scanName()
 	scanTable()
 	scanFields()
-	scanSourceConfig()
 }
 
 func scanName() {
@@ -65,56 +59,6 @@ func scanFields() {
 	fs = getFields(fields)
 	if len(fs) == 0 {
 		color.Red("no se han recibido campos del modelo")
-		os.Exit(1)
-	}
-}
-
-func getFields(value string) []Field {
-	var err error
-	rs := make([]Field, 0)
-	fields := strings.Split(value, " ")
-	for _, v := range fields {
-		field := strings.Split(v, ":")
-		nn := "NOT NULL"
-		i := 0
-		if len(field) >= 3 {
-			if strings.ToLower(field[2]) == "t" {
-				nn = ""
-			}
-		}
-		if len(field) == 4 {
-			i, err = strconv.Atoi(field[3])
-			if err != nil {
-				log.Fatalf("%s no es un número válido: %v", field[3], err)
-			}
-
-		}
-		f := Field{field[0], field[1], nn, i}
-		rs = append(rs, f)
-	}
-
-	return rs
-}
-
-func scanSourceConfig() {
-	var v string
-	ps = make(map[string]string, 0)
-
-	color.Cyan("1. Ubicación del archivo de configuracion (json)")
-	color.Cyan("* ruta absoluta o relativa al archivo de configuracion")
-	fmt.Scan(&v)
-
-	file, err := ioutil.ReadFile(v)
-	if err != nil {
-		e := fmt.Sprintf("no se pudo abrir el archivo de configuración: %v", err)
-		color.Red(e)
-		os.Exit(1)
-	}
-
-	err = json.Unmarshal(file, &ps)
-	if err != nil {
-		e := fmt.Sprintf("no se pudo convertir la configuración en mapa: %v", err)
-		color.Red(e)
 		os.Exit(1)
 	}
 }
