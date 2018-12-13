@@ -1,5 +1,4 @@
 {
   "dest": "/ruta/al/destino",
-  "module_role": "/ruta/a/roles/x/modulo",
-  "login": "/ruta/a/login",
+  "packages_folder": "nombre_carpeta_de_paquetes"
 }

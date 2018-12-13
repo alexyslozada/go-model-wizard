@@ -1,11 +1,15 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -31,16 +35,31 @@ func init() {
 }
 
 func main() {
-	showMainMenu()
+	ff := flag.String("file", "", "utiliza este flag si deseas generar paquetes desde un archivo.")
+	fc := flag.String("config", "./config.json", "ubicación del archivo json de configuración.")
+	flag.Parse()
+
+	readConfigFile(*fc)
 
 	color.Green("Iniciando proceso...")
 
+	if *ff != "" {
+		generateFromFile(*ff)
+	} else {
+		showMainMenu()
+		execute()
+	}
+
+	color.Green("Proceso finalizado.")
+}
+
+func execute() {
 	m := Model{n, t, fs, ps}
 	gopath := os.Getenv("GOPATH")
 	realDest := []string{gopath, "src"}
 	realDest = append(realDest, strings.Split(ps["dest"], "/")...)
 	gp := filepath.Join(realDest...)
-	pks := filepath.Join(gp, "models")
+	pks := filepath.Join(gp, ps["packages_folder"])
 	ds := filepath.Join(gp, "database")
 
 	pk := filepath.Join(pks, n)
@@ -54,8 +73,6 @@ func main() {
 	generatePsql(m, pk)
 	generateHandler(m, pk)
 	generateRoute(m, pk)
-
-	color.Green("Proceso finalizado.")
 }
 
 // createDir crea el directorio de destino de los archivos
@@ -74,4 +91,49 @@ func formatFile(filePath string) {
 	if err != nil {
 		fmt.Printf("ERROR: No se pudo ejecutar gofmt")
 	}
+}
+
+func readConfigFile(cf string) {
+	ps = make(map[string]string, 0)
+
+	file, err := ioutil.ReadFile(cf)
+	if err != nil {
+		e := fmt.Sprintf("no se pudo abrir el archivo de configuración: %v", err)
+		color.Red(e)
+		os.Exit(1)
+	}
+
+	err = json.Unmarshal(file, &ps)
+	if err != nil {
+		e := fmt.Sprintf("no se pudo convertir la configuración en mapa: %v", err)
+		color.Red(e)
+		os.Exit(1)
+	}
+}
+
+func getFields(value string) []Field {
+	var err error
+	rs := make([]Field, 0)
+	fields := strings.Split(value, " ")
+	for _, v := range fields {
+		field := strings.Split(v, ":")
+		nn := "NOT NULL"
+		i := 0
+		if len(field) >= 3 {
+			if strings.ToLower(field[2]) == "t" {
+				nn = ""
+			}
+		}
+		if len(field) == 4 {
+			i, err = strconv.Atoi(field[3])
+			if err != nil {
+				log.Fatalf("%s no es un número válido: %v", field[3], err)
+			}
+
+		}
+		f := Field{field[0], field[1], nn, i}
+		rs = append(rs, f)
+	}
+
+	return rs
 }
