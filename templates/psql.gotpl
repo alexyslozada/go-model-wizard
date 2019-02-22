@@ -128,7 +128,7 @@ func (p *Psql) scanRow(s psql.RowScanner) (*Model, error) {
 	{{end -}}
 	nt := pq.NullTime{}
 
-	err := s.Scan(
+	if err := s.Scan(
 	    &m.ID,
 	    {{range .Fields -}}
 	    {{if ne .NotNull "NOT NULL" -}}
@@ -139,8 +139,7 @@ func (p *Psql) scanRow(s psql.RowScanner) (*Model, error) {
 	    {{end -}}
 	    &m.CreatedAt,
 	    &nt,
-	)
-	if err != nil {
+	); err != nil {
 		return m, err
 	}
 
