@@ -140,9 +140,6 @@ func (p *Psql) scanRow(s psql.RowScanner) (*Model, error) {
 	    &m.CreatedAt,
 	    &nt,
 	)
-	if err == sql.ErrNoRows {
-	    return m, err
-	}
 	if err != nil {
 		return m, err
 	}
