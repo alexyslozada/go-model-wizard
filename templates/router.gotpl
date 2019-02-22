@@ -3,17 +3,16 @@ package {{.Name}}
 import (
     "database/sql"
 
-    "github.com/alexyslozada/config-go"
     log "github.com/alexyslozada/logger-go"
 
 	"github.com/labstack/echo"
 )
 
 // Route del paquete {{.Name}}
-func Route(e *echo.Echo, c *config.Configuration, db *sql.DB, l *log.Model) {
+func Route(e *echo.Echo, engine string, db *sql.DB, l *log.Model) {
 	r := e.Group("/api/v1/{{kcc .Table}}")
 
-	h := NewHandler(c, db, l)
+	h := NewHandler(engine, db, l)
 	r.POST("", h.Create)
 	r.GET("", h.GetAll)
 	r.GET("/:id", h.GetByID)

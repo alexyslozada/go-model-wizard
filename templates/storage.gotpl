@@ -3,7 +3,6 @@ package {{.Name}}
 import (
     "database/sql"
 
-	"github.com/alexyslozada/config-go"
 	log "github.com/alexyslozada/logger-go"
 )
 
@@ -22,17 +21,14 @@ type Storage interface {
 	GetAll() (Models, error)
 }
 
-func newStorage(c *config.Configuration, db *sql.DB, l *log.Model) Storage {
+func newStorage(engine string, db *sql.DB, l *log.Model) Storage {
 	var s Storage
-	dbe, err := c.Get("db_engine")
-	if err != nil {
-	    l.Error.Fatalf("error al leer el campo db_engine del archivo de configuración json: %v", err)
-	}
-	switch dbe {
+
+	switch engine {
 	case Postgresql:
 		s = &Psql{db}
 	default:
-		l.Error.Fatalf("el motor de base de datos %s no está implementado.", dbe)
+		l.Error.Fatalf("el motor de base de datos %s no está implementado.", engine)
 	}
 
 	return s

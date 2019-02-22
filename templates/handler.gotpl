@@ -7,21 +7,20 @@ import (
 
 	"github.com/labstack/echo"
 
-    "github.com/alexyslozada/config-go"
 	log "github.com/alexyslozada/logger-go"
     message "github.com/alexyslozada/messages-go"
 )
 
 // Handler estructura que tiene los handler de {{.Name}}
 type Handler struct {
-    Configuration *config.Configuration
-    DB            *sql.DB
-    Logger        *log.Model
+    Engine string
+    DB     *sql.DB
+    Logger *log.Model
 }
 
 // NewHandler devuelve un puntero a Handler.
-func NewHandler(c *config.Configuration, db *sql.DB, l *log.Model) *Handler {
-    return &Handler{c, db, l}
+func NewHandler(engine string, db *sql.DB, l *log.Model) *Handler {
+    return &Handler{engine, db, l}
 }
 
 // Create handler para crear un registro de {{.Name}}
@@ -40,7 +39,7 @@ func (h *Handler) Create(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, mr)
 	}
 
-	ms := NewStore(h.Configuration, h.DB, h.Logger)
+	ms := NewStore(h.Engine, h.DB, h.Logger)
 	err = ms.Create(m)
 	if err != nil {
 		h.Logger.Error.Printf("no se pudo registrar el modelo. Handler {{.Name}}.Create: %v", err)
@@ -85,7 +84,7 @@ func (h *Handler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-    ms := NewStore(h.Configuration, h.DB, h.Logger)
+    ms := NewStore(h.Engine, h.DB, h.Logger)
 	m.ID = uint(id)
 	err = ms.Update(m.ID, m)
 	if err != nil {
@@ -119,7 +118,7 @@ func (h *Handler) Delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-    ms := NewStore(h.Configuration, h.DB, h.Logger)
+    ms := NewStore(h.Engine, h.DB, h.Logger)
 	err = ms.Delete(uint(id))
 	if err != nil {
 		h.Logger.Error.Printf("error al borrar el id: %d. Handler {{.Name}}.Delete: %v", id, err)
@@ -151,7 +150,7 @@ func (h *Handler) GetByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, mr)
 	}
 
-    ms := NewStore(h.Configuration, h.DB, h.Logger)
+    ms := NewStore(h.Engine, h.DB, h.Logger)
 	res, err := ms.GetByID(uint(id))
 	if err == sql.ErrNoRows {
 		mr.AddMessage(
@@ -181,7 +180,7 @@ func (h *Handler) GetByID(c echo.Context) error {
 func (h *Handler) GetAll(c echo.Context) error {
 	mr := message.ResponseMessage{}
 
-    ms := NewStore(h.Configuration, h.DB, h.Logger)
+    ms := NewStore(h.Engine, h.DB, h.Logger)
 	res, err := ms.GetAll()
 	if err != nil {
 		h.Logger.Error.Printf("no se pudo obtener la información. Handler {{.Name}}.GetAll: %v", err)
