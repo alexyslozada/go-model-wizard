@@ -21,7 +21,7 @@ func showMainMenu() {
 
 func scanName() {
 	color.Cyan("1. Digite el nombre del paquete en singular y minuscula:")
-	fmt.Scan(&n)
+	fmt.Scanln(&n)
 	if n == "" {
 		color.Red("el nombre del paquete es obligatorio")
 		os.Exit(1)
@@ -30,7 +30,7 @@ func scanName() {
 
 func scanTable() {
 	color.Cyan("2. Digite el nombre de la tabla en plural y minuscula:")
-	fmt.Scan(&t)
+	fmt.Scanln(&t)
 	if t == "" {
 		color.Red("el nombre de la tabla es obligatorio")
 		os.Exit(1)
